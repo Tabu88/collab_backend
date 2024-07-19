@@ -13,6 +13,9 @@ namespace collab_api.Models
         [Required]
         public string Password { get; set; } = "";
 
+        [Required]
+        public string Gender { get; set; } = "";
+
         public byte[] ProfileImage { get; set; }
         public string Location { get; set; } = "";
     }
