@@ -17,9 +17,12 @@ namespace collab_api.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateMessage(MessagesDTO messagesDto) 
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             try
             {
                 using (SqlConnection connection = new SqlConnection(connectionString)) 
@@ -49,11 +52,14 @@ namespace collab_api.Controllers
         
         }
 
-        [HttpDelete("{id}")]                
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeleteMessage(int id)
         {
 
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -78,9 +84,12 @@ namespace collab_api.Controllers
         }
 
         [HttpGet("to")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetReceivedMessages(string to) 
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             List<Models.Messages> messages = new List<Models.Messages>();
             try
             {
@@ -120,9 +129,12 @@ namespace collab_api.Controllers
         }
 
         [HttpGet("from")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetSentMessages(string from)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             List<Models.Messages> messages = new List<Models.Messages>();
             try
             {

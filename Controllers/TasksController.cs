@@ -23,6 +23,9 @@ namespace collab_api.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetTasks()
         {
             string connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -80,6 +83,10 @@ namespace collab_api.Controllers
 
 
         [HttpGet("{userId}")]
+        [Route("GetUserTasks")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetTask(string userId)
         {
             string connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -136,6 +143,9 @@ namespace collab_api.Controllers
 
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateTask(TaskDTO taskDto)
         {
             string connectionString = _configuration.GetConnectionString("DefaultConnection");
@@ -175,6 +185,9 @@ namespace collab_api.Controllers
 
 
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeleteTask(int id) 
         {
 
@@ -207,6 +220,9 @@ namespace collab_api.Controllers
         }
 
         [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult UpdateTask(int id, TaskDTO taskDto) 
         {
             string connectionString = _configuration.GetConnectionString("DefaultConnection");

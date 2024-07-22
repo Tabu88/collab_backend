@@ -21,9 +21,12 @@ namespace collab_api.Controllers
         }
 
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult CreateUser(UserDTO userDto)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             try 
             {
                 using (SqlConnection connection = new SqlConnection(connectionString)) 
@@ -58,9 +61,12 @@ namespace collab_api.Controllers
         }
 
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetUsers() 
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             List<User> users = new List<User>();
             try 
             {
@@ -103,10 +109,59 @@ namespace collab_api.Controllers
             return Ok(users);
         }
 
+        [HttpPost("login")]
+        public async Task<IActionResult> Login( LoginRequest loginRequest)
+        {
+            if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Email) || string.IsNullOrEmpty(loginRequest.Password))
+            {
+                return BadRequest("Invalid login request");
+            }
+
+            try
+            {
+                bool isAuthenticated = await AuthenticateUser(loginRequest.Email, loginRequest.Password);
+                if (isAuthenticated)
+                {
+                    return Ok("Login successful");
+                }
+                else
+                {
+                    return Unauthorized("Invalid email or password");
+                }
+            }
+            catch (Exception ex)
+            {
+               
+                return StatusCode(500, "An internal server error occurred");
+            }
+        }
+
+        private async Task<bool> AuthenticateUser(string email, string password)
+        {
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
+            bool isAuthenticated = false;
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                string query = "SELECT COUNT(*) FROM Users WHERE Email = @Email AND Password = @Password";
+                SqlCommand command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Email", email);
+                command.Parameters.AddWithValue("@Password", password); // Note: Ensure password hashing and secure comparison in production
+
+                await connection.OpenAsync();
+                int result = (int)await command.ExecuteScalarAsync();
+
+                isAuthenticated = result > 0;
+            }
+            return isAuthenticated;
+        }
+
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult GetUser(int id) 
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             User user = new User();
 
             try 
@@ -159,10 +214,13 @@ namespace collab_api.Controllers
         }
 
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult UpdateUserProfile(int id, UserDTO userDTO) 
         {
 
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             try
             {
                 using (var connection = new SqlConnection(connectionString)) 
@@ -195,9 +253,12 @@ namespace collab_api.Controllers
         }
 
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public IActionResult DeleteUser(int id) 
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
+            string connectionString = _configuration.GetConnectionString("HostedConnection");
             try
             {
                 using (var connection = new SqlConnection(connectionString))
