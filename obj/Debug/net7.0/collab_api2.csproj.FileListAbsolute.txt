@@ -74,3 +74,4 @@ C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\re
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.pdb
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.genruntimeconfig.cache
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\ref\collab_api2.dll
+C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\bin\Debug\net7.0\BCrypt.Net-Next.dll

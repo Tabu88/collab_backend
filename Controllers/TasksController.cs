@@ -2,6 +2,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
+
+using SystemTask = System.Threading.Tasks.Task;
+
 namespace collab_api2.Controllers
 {
     [ApiController]
@@ -77,8 +80,7 @@ namespace collab_api2.Controllers
         }
 
 
-        [HttpGet("{userId}")]
-        [Route("GetUserTasks")]
+        [HttpGet("GetUserTasks/{userId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]

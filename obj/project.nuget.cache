@@ -1,11 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "rGcV8pZ5QNeOytTtFUgEJ6DEDvjC5WTnmalDS3WvEbH8Bc19MObY2QvXXEvAJSmxwGCtvJ2WNDu+FFJTxR9CSw==",
+  "dgSpecHash": "b30OqjI4NtJkYqQnm5gqQ+OxFXyxyeMRPrD9QobPd1Gbq56KOYCFlMpeQtvAA3b4F0wc9LzkBwL1x0uUQH993g==",
   "success": true,
   "projectFilePath": "C:\\Users\\Dennis.Wabomba\\source\\repos\\collab_api2\\collab_api2\\collab_api2.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\azure.core\\1.24.0\\azure.core.1.24.0.nupkg.sha512",
     "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\azure.identity\\1.6.0\\azure.identity.1.6.0.nupkg.sha512",
+    "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
     "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\microsoft.aspnetcore.openapi\\7.0.11\\microsoft.aspnetcore.openapi.7.0.11.nupkg.sha512",
     "C:\\Users\\Dennis.Wabomba\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",

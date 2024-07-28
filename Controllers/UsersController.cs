@@ -1,54 +1,73 @@
 ﻿using collab_api2.Models;
-using Microsoft.AspNetCore.Components;
+using collab_api2.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
 namespace collab_api2.Controllers
 {
-    [Microsoft.AspNetCore.Components.Route("api/[controller]")]
+    [Route("api/[controller]")]
     [ApiController]
     public class UsersController : ControllerBase
     {
 
         private readonly IConfiguration _configuration;
+        private readonly UsersService _usersService;
 
-        public UsersController(IConfiguration configuration)
+        public UsersController(IConfiguration configuration, UsersService usersService)
         {
             _configuration = configuration;
+            _usersService = usersService;
 
         }
 
-        [HttpPost]
+        [HttpPost("createUser")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult CreateUser(UserDTO userDto)
+        public async Task<IActionResult> CreateUser(UserDTO userDto)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
+            ResponseModel responseModel = new ResponseModel();
+            if(userDto == null) 
+            {
+                responseModel.Status = "Failed";
+                responseModel.Message = "User Data cannot be empty";
+
+                return BadRequest(responseModel);       
+            }
             try
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "INSERT INTO users " +
-                        "(name, email ,password ,profile_image, location) VALUES " +
-                        "(@name, @email, @password, @profile_image, @location)";
-
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@name", userDto.Name);
-                        command.Parameters.AddWithValue("@email", userDto.Email);
-                        command.Parameters.AddWithValue("@password", userDto.Password);
-                        command.Parameters.AddWithValue("@profile_image", userDto.ProfileImage);
-                        command.Parameters.AddWithValue("@location", userDto.Location);
-
-                        command.ExecuteNonQuery();
-                    }
-
-                }
+                await _usersService.CreateUser(userDto);
+                responseModel.Status = "Success";
+                responseModel.Message = "User created successfully";
+                return Ok(responseModel);
 
 
+            }
+            catch (Exception ex)
+            {
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+
+                return BadRequest(responseModel);
+
+            }
+        }
+
+        [HttpGet("getAllUsers")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> GetUsers()
+        {
+            ResponseModel responseModel = new ResponseModel();  
+           
+            try
+            {
+                 var users = _usersService.GetUsers();
+                responseModel.Status = "Success";
+                responseModel.Users = users;
+                return Ok(responseModel);
+                
             }
             catch (Exception ex)
             {
@@ -56,236 +75,140 @@ namespace collab_api2.Controllers
                 return BadRequest(ModelState);
 
             }
-            return Ok();
-        }
-
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetUsers()
-        {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            List<User> users = new List<User>();
-            try
-            {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "SELECT * FROM users";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                User user = new User();
-
-                                user.Id = reader.GetInt32(0);
-                                user.Name = reader.GetString(1);
-                                user.Email = reader.GetString(2);
-                                user.Password = reader.GetString(3);
-                                user.CreatedAt = reader.GetDateTime(4);
-                                user.ProfileImage = reader.IsDBNull(reader.GetOrdinal("profile_image")) ? null : (byte[])reader["profile_image"];
-
-                                user.Location = reader.IsDBNull(reader.GetOrdinal("location")) ? null : reader.GetString(6);
-
-
-                                users.Add(user);
-
-                            }
-                        }
-
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ModelState.AddModelError("Users", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
-
-            }
-            return Ok(users);
+            
         }
 
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login(LoginRequest loginRequest)
         {
+            ResponseModel responseModel = new ResponseModel();
             if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Email) || string.IsNullOrEmpty(loginRequest.Password))
             {
-                return BadRequest("Invalid login request");
+                responseModel.Status = "Failed";
+                responseModel.Message = "Invalid login request";
+
+                return BadRequest(responseModel);
             }
 
             try
             {
-                bool isAuthenticated = await AuthenticateUser(loginRequest.Email, loginRequest.Password);
-                if (isAuthenticated)
+                (int result, string token) auth = await _usersService.AuthenticateUser(loginRequest.Email, loginRequest.Password);
+                if (auth.result == 1)
                 {
-                    return Ok("Login successful");
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Login successful";
+                    responseModel.Token = auth.token;
+                    return Ok(responseModel);
+                } else if (auth.result == 0) 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "User not found";
+                    return Unauthorized(responseModel);               
+                
                 }
                 else
                 {
-                    return Unauthorized("Invalid email or password");
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Invalid email or password";
+                    return Unauthorized(responseModel);
                 }
             }
             catch (Exception ex)
             {
-
-                return StatusCode(500, "An internal server error occurred");
+                responseModel.Status = "Failed";
+                responseModel.Message = "An internal server error occurred";
+                return BadRequest(responseModel);
             }
         }
+         
 
-        private async Task<bool> AuthenticateUser(string email, string password)
-        {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            bool isAuthenticated = false;
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                string query = "SELECT COUNT(*) FROM Users WHERE Email = @Email AND Password = @Password";
-                SqlCommand command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Email", email);
-                command.Parameters.AddWithValue("@Password", password); // Note: Ensure password hashing and secure comparison in production
-
-                await connection.OpenAsync();
-                int result = (int)await command.ExecuteScalarAsync();
-
-                isAuthenticated = result > 0;
-            }
-            return isAuthenticated;
-        }
-
-        [HttpGet("{id}")]
+        [HttpGet("getUser/{email}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetUser(int id)
+        public async Task<IActionResult> GetUser(string email)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            User user = new User();
-
+            ResponseModel responseModel = new ResponseModel();
+            
             try
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "SELECT * FROM users WHERE id=@id";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-
-                            if (reader.Read())
-                            {
-                                user.Id = reader.GetInt32(0);
-                                user.Name = reader.GetString(1);
-                                user.Email = reader.GetString(2);
-                                user.Password = reader.GetString(3);
-                                user.CreatedAt = reader.GetDateTime(4);
-                                user.ProfileImage = reader.IsDBNull(reader.GetOrdinal("profile_image")) ? null : (byte[])reader["profile_image"];
-                                user.Location = reader.IsDBNull(reader.GetOrdinal("location")) ? null : reader.GetString(reader.GetOrdinal("location"));
-
-                            }
-                            else
-                            {
-                                return NotFound();
-
-                            }
-
-
-
-                        }
-
-                    }
-
-                }
+                var user = await _usersService.GetUser(email);
+               return Ok(user);
+                
 
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Users", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
 
-            }
-
-            return Ok(user);
-
+            }    
         }
 
-        [HttpPut("{id}")]
+        [HttpPut("updateUser")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateUserProfile(int id, UserDTO userDTO)
+        public async Task<IActionResult> UpdateUserProfile(int id, UserDTO userDto)
         {
-
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
+            ResponseModel responseModel = new ResponseModel();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
-                {
-                    connection.Open();
-
-                    string sql = "UPDATE users SET name=@name, email=@email, location=@location, profile_image=@profile_image WHERE id=@id";
-
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@name", userDTO.Name);
-                        command.Parameters.AddWithValue("@email", userDTO.Email);
-                        command.Parameters.AddWithValue("@location", userDTO.Location);
-                        command.Parameters.AddWithValue("@profile_image", userDTO.ProfileImage);
-                        command.Parameters.AddWithValue("@id", id);
-
-                        command.ExecuteNonQuery();
-                    }
-
-                }
-
-
+                var update = _usersService.UpdateUserProfile(id, userDto);
+               
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Users", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+                
             }
-            return Ok();
+            responseModel.Status = "Success";
+            responseModel.Message = "Successfully updated user";
+            return Ok(responseModel);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("deleteUser")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteUser(int id)
+        public async Task<IActionResult> DeleteUser(int id)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
+            ResponseModel responseModel = new ResponseModel();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                var deleted = await _usersService.DeleteUser(id);
+                if (deleted)
                 {
-                    connection.Open();
+                    responseModel.Status = "Success";
+                    responseModel.Message = "User deleted successfully";
+                    return Ok(responseModel);
 
-                    string sql = "DELETE FROM users WHERE id=@id";
-
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-
-                        command.ExecuteNonQuery();
-                    }
-
+                } else 
+                {
+                    responseModel = new ResponseModel();
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "An error occurred";
+                    return BadRequest(responseModel);
+                
+                
                 }
-
 
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Users", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel = new ResponseModel();
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+                
             }
-            return Ok();
+            
 
         }
     }
