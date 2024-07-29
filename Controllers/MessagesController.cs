@@ -1,4 +1,5 @@
 ﻿using collab_api2.Models;
+using collab_api2.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -10,45 +11,45 @@ namespace collab_api2.Controllers
     {
 
         private readonly IConfiguration _configuration;
+        private readonly MessagesService _messagesService;
 
-        public MessagesController(IConfiguration configuration)
+        public MessagesController(IConfiguration configuration, MessagesService messagesService)
         {
             _configuration = configuration;
+            _messagesService = messagesService;
         }
 
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult CreateMessage(MessagesDTO messagesDto)
+        public async Task<IActionResult> CreateMessage(MessagesDTO messagesDto)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            try
+           MessagesResponseModel responseModel = new MessagesResponseModel();
+            try 
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                var created = await _messagesService.CreateMessage(messagesDto);
+                if (created) 
                 {
-                    connection.Open();
-
-                    string sql = "INSERT INTO messages " +
-                        "([from], [to], message) VALUES " +
-                        "(@from, @to, @message)";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@from", messagesDto.From);
-                        command.Parameters.AddWithValue("@to", messagesDto.To);
-                        command.Parameters.AddWithValue("@message", messagesDto.Message);
-
-                        command.ExecuteNonQuery();
-                    }
-                }
-            }
-            catch (Exception ex)
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Message created successfully";
+                    return Ok(responseModel);              
+                
+                } else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Service failed";
+                    return BadRequest(responseModel);
+                
+                }           
+            } catch (Exception ex) 
             {
-                ModelState.AddModelError("Messages", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
-
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+            
+            
             }
-            return Ok();
 
         }
 
@@ -56,121 +57,99 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteMessage(int id)
+        public async Task<IActionResult> DeleteMessage(int id)
         {
-
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            try
+            MessagesResponseModel responseModel = new MessagesResponseModel();
+            try 
             {
-                using (var connection = new SqlConnection(connectionString))
+                var deleted = await _messagesService.DeletedMessage(id);
+                if (deleted) 
                 {
-                    connection.Open();
-
-                    string sql = "DELETE FROM messages WHERE id=@id";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-                        command.ExecuteNonQuery();
-                    }
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Message deleted successfully";
+                    return Ok(responseModel);
+                
+                } else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Failed service";
+                    return BadRequest(responseModel);
+                
                 }
-            }
-            catch (Exception ex)
+            } catch (Exception ex) 
             {
-                ModelState.AddModelError("Messages", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
-
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);           
+            
             }
-            return Ok();
         }
 
         [HttpGet("to")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetReceivedMessages(string to)
+        public async Task<IActionResult> GetReceivedMessages(string to)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            List<Models.Messages> messages = new List<Models.Messages>();
-            try
+            MessagesResponseModel responseModel = new MessagesResponseModel();
+            try 
             {
-                using (var connection = new SqlConnection(connectionString))
+                (bool success, List<Messages> messages) result = await _messagesService.GetReceivedMessages(to);
+                if (result.success) 
                 {
-                    connection.Open();
-                    string sql = "SELECT * FROM messages WHERE [to]=@to";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@to", to);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                Models.Messages message = new Models.Messages();
-
-                                message.Id = reader.GetInt32(0);
-                                message.From = reader.GetString(1);
-                                message.To = reader.GetString(2);
-                                message.Message = reader.GetString(3);
-                                message.SentAt = reader.GetDateTime(4);
-
-                                messages.Add(message);
-
-                            }
-
-                        }
-                    }
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Messages retrieved successfully";
+                    responseModel.Messages = result.messages;
+                    return Ok(responseModel);                 
+                } else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Service failed";
+                    return BadRequest(responseModel);               
+                
                 }
-            }
-            catch (Exception ex)
+            } catch(Exception ex) 
             {
-                ModelState.AddModelError("Messages", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+            
             }
-            return Ok(messages);
         }
 
         [HttpGet("from")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetSentMessages(string from)
+        public async Task<IActionResult> GetSentMessages(string from)
         {
-            string connectionString = _configuration.GetConnectionString("HostedConnection");
-            List<Models.Messages> messages = new List<Models.Messages>();
+            MessagesResponseModel responseModel = new MessagesResponseModel();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                (bool success, List<Messages> messages) result = await _messagesService.GetSentMessages(from);
+                if (result.success)
                 {
-                    connection.Open();
-                    string sql = "SELECT * FROM messages WHERE [from]=@from";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@from", from);
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                Models.Messages message = new Models.Messages();
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Messages retrieved successfully";
+                    responseModel.Messages = result.messages;
+                    return Ok(responseModel);
+                }
+                else
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Service failed";
+                    return BadRequest(responseModel);
 
-                                message.Id = reader.GetInt32(0);
-                                message.From = reader.GetString(1);
-                                message.To = reader.GetString(2);
-                                message.Message = reader.GetString(3);
-                                message.SentAt = reader.GetDateTime(4);
-
-                                messages.Add(message);
-
-                            }
-
-                        }
-                    }
                 }
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("Messages", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+
             }
-            return Ok(messages);
+
         }
 
     }

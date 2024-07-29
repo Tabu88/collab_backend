@@ -2,7 +2,7 @@
 
 namespace collab_api2.Models
 {
-    public class ResponseModel
+    public class UserResponseModel
     {
         public string Status { get; set; }
         public string Message { get; set; }

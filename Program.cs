@@ -25,17 +25,17 @@ namespace collab_api2
             builder.Services.AddSwaggerGen();
             builder.Services.AddTransient<UsersService>();
             builder.Services.AddTransient<TasksService>();
-            //builder.Services.AddTransient<MessagesService>();
+            builder.Services.AddTransient<MessagesService>();
             //builder.Services.AddTransient<SubtServices>();`
 
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
-            //if (app.Environment.IsDevelopment())
-            //{
-                //app.UseSwagger();
-                //app.UseSwaggerUI();
-            //}
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
 
             app.UseSwagger();
             app.UseSwaggerUI();

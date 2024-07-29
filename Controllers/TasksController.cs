@@ -1,4 +1,5 @@
 ﻿using collab_api2.Models;
+using collab_api2.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 
@@ -12,11 +13,14 @@ namespace collab_api2.Controllers
     public class TasksController : ControllerBase
     {
         private readonly IConfiguration _configuration;
+        private readonly TasksService _tasksService;
 
 
-        public TasksController(IConfiguration configuration)
+        public TasksController(IConfiguration configuration, TasksService tasksService)
         {
             _configuration = configuration;
+            _tasksService = tasksService;
+
 
         }
 
@@ -24,58 +28,33 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetTasks()
+        public async Task<IActionResult> GetTasks()
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            List<Models.Task> tasks = new List<Models.Task>();
+            TaskResponseModel responseModel = new TaskResponseModel();
             try
             {
-                using (var connection = new SqlConnection(connectionString))
+                (bool success, List<Models.Task> tasks) result = await _tasksService.GetAllTasks();
+                if (result.success) 
                 {
-                    connection.Open();
-
-                    string sql = "SELECT * FROM tasks";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                Models.Task task = new Models.Task();
-
-                                task.Id = reader.GetInt32(0);
-                                task.Title = reader.GetString(1);
-                                task.Description = reader.GetString(2);
-                                task.Alert = reader.GetString(3);
-                                task.Status = reader.GetString(4);
-                                task.Category = reader.GetString(5);
-                                task.Deadline = reader.GetDateTime(6);
-                                task.UserId = reader.GetString(7);
-                                task.CreatedAt = reader.GetDateTime(8);
-
-                                tasks.Add(task);
-
-
-                            }
-
-
-                        }
-
-
-
-                    }
-
-
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Tasks retrieved successfully";
+                    responseModel.Tasks = result.tasks;
+                    return Ok(responseModel);              
+                
+                } else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Failed service";
+                    return BadRequest(responseModel);                
+                
                 }
-
-
-            }
-            catch (Exception ex)
+            } catch(Exception ex) 
             {
-                ModelState.AddModelError("Tasks", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
             }
-            return Ok(tasks);
+            
 
         }
 
@@ -84,57 +63,39 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult GetTask(string userId)
+        public async Task<IActionResult> GetTask(string userId)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            Models.Task task = new Models.Task();
-            try
+            TaskResponseModel responseModel = new TaskResponseModel();
+            try 
             {
-                using (var connection = new SqlConnection(connectionString))
+                (bool success,List<Models.Task> tasks) result = await _tasksService.GetUserTasks(userId);
+                if (result.success) 
                 {
-                    connection.Open();
-
-                    string sql = "SELECT * FROM tasks WHERE userId=@userId";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@userId", userId);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                task.Id = reader.GetInt32(0);
-                                task.Title = reader.GetString(1);
-                                task.Description = reader.GetString(2);
-                                task.Alert = reader.GetString(3);
-                                task.Status = reader.GetString(4);
-                                task.Category = reader.GetString(5);
-                                task.Deadline = reader.GetDateTime(6);
-                                task.UserId = reader.GetString(7);
-                                task.CreatedAt = reader.GetDateTime(8);
-
-
-                            }
-                            else
-                            {
-                                return NotFound();
-                            }
-                        }
-
-
-                    }
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Task retrieved successfully";
+                    responseModel.Tasks = result.tasks;
+                    return Ok(responseModel);
 
                 }
-
-            }
-            catch (Exception ex)
+                else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Failed service";
+                    return BadRequest(responseModel);
+                
+                
+                }
+            
+            
+            } catch (Exception ex) 
             {
-                ModelState.AddModelError("Tasks", $"Sorry we have an exception{ex}");
-                return BadRequest(ModelState);
-
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+            
+            
             }
-
-            return Ok(task);
+         
 
         }
 
@@ -143,41 +104,43 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult CreateTask(TaskDTO taskDto)
+        public async Task<IActionResult> CreateTask(TaskDTO taskDto)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            try
+            UserResponseModel responseModel = new UserResponseModel();
+            if(taskDto == null) 
             {
-                using (SqlConnection connection = new SqlConnection(connectionString))
+                responseModel.Status = "Failed";
+                responseModel.Message = "Task data cannot be empty";
+                return BadRequest(responseModel);
+            
+            }
+            try 
+            {
+                var created = await _tasksService.CreateTask(taskDto);
+                if(created) 
                 {
-                    connection.Open();
-
-                    string sql = "INSERT INTO tasks " +
-                        "(title, description, alert, status, category, deadline, userId) VALUES " +
-                        "(@title, @description, @alert, @status, @category, @deadline, @userId)";
-
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@title", taskDto.Title);
-                        command.Parameters.AddWithValue("@description", taskDto.Description);
-                        command.Parameters.AddWithValue("@alert", taskDto.Alert);
-                        command.Parameters.AddWithValue("@status", taskDto.Status);
-                        command.Parameters.AddWithValue("@category", taskDto.Category);
-                        command.Parameters.AddWithValue("@deadline", taskDto.Deadline);
-                        command.Parameters.AddWithValue("@userId", taskDto.UsersId);
-
-                        command.ExecuteNonQuery();
-                    }
-
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Tasks created successfully";
+                    return Ok(responseModel);
+                
+                } else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Service failed";
+                    return BadRequest(responseModel);
+                
+                
                 }
-
-            }
-            catch (Exception ex)
+            
+            
+            }catch (Exception ex) 
             {
-                ModelState.AddModelError("Tasks", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+            
+            
             }
-            return Ok();
         }
 
 
@@ -185,33 +148,38 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult DeleteTask(int id)
+        public async Task<IActionResult> DeleteTask(int id)
         {
-
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            try
+            TaskResponseModel responseModel = new TaskResponseModel();
+            try 
             {
-                using (var connection = new SqlConnection(connectionString))
+                var deleted = await _tasksService.RemoveTask(id);
+                if (deleted) 
                 {
-                    connection.Open();
-
-                    string sql = "DELETE FROM tasks WHERE id=@id";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-                        command.ExecuteNonQuery();
-
-                    }
-
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Task removed successfully";
+                    return Ok(responseModel);
                 }
-            }
-            catch (Exception ex)
+                else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Failed service";
+                    return BadRequest(responseModel);
+                
+                
+                }
+            
+            
+            
+            }catch(Exception ex) 
             {
-                ModelState.AddModelError("Tasks", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
-
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);           
+            
             }
-            return Ok();
+
+           
 
 
         }
@@ -220,37 +188,34 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public IActionResult UpdateTask(int id, TaskDTO taskDto)
+        public async Task<IActionResult> UpdateTask(int id, TaskDTO taskDto)
         {
-            string connectionString = _configuration.GetConnectionString("DefaultConnection");
-            try
+            TaskResponseModel responseModel = new TaskResponseModel();
+            try 
             {
-                using (var connection = new SqlConnection(connectionString))
+                var updated = await _tasksService.UpdateTask(id, taskDto);
+                if (updated) 
                 {
-                    connection.Open();
+                    responseModel.Status = "Success";
+                    responseModel.Message = "Task updated successfully";
+                    return Ok(responseModel);
 
-                    string sql = "UPDATE tasks SET title=@title, description=@description, alert=@alert, status=@status, category=@category, deadline=@deadline, userId=@userId WHERE id=@id";
-                    using (var command = new SqlCommand(sql, connection))
-                    {
-                        command.Parameters.AddWithValue("@title", taskDto.Title);
-                        command.Parameters.AddWithValue("@description", taskDto.Description);
-                        command.Parameters.AddWithValue("@alert", taskDto.Alert);
-                        command.Parameters.AddWithValue("@status", taskDto.Status);
-                        command.Parameters.AddWithValue("@category", taskDto.Category);
-                        command.Parameters.AddWithValue("@deadline", taskDto.Deadline);
-                        command.Parameters.AddWithValue("@userId", taskDto.UsersId);
-
-                        command.ExecuteNonQuery();
-                    }
                 }
-            }
-            catch (Exception ex)
+                else 
+                {
+                    responseModel.Status = "Failed";
+                    responseModel.Message = "Failed Service";
+                    return BadRequest(responseModel);
+                
+                }           
+            }  catch(Exception ex) 
             {
-                ModelState.AddModelError("Tasks", $"Sorry but we have an exception{ex}");
-                return BadRequest(ModelState);
-
+                responseModel.Status = "Failed";
+                responseModel.Message = ex.Message;
+                return BadRequest(responseModel);
+            
+            
             }
-            return Ok();
 
         }
     }

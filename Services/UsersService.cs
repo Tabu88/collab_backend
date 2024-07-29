@@ -143,7 +143,7 @@ namespace collab_api2.Services
             }
             string token = CreateToken(user);
 
-            var tuple = (result,token);
+            
             return (result, token);
 
 

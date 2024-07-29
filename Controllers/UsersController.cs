@@ -10,12 +10,11 @@ namespace collab_api2.Controllers
     public class UsersController : ControllerBase
     {
 
-        private readonly IConfiguration _configuration;
         private readonly UsersService _usersService;
 
         public UsersController(IConfiguration configuration, UsersService usersService)
         {
-            _configuration = configuration;
+          
             _usersService = usersService;
 
         }
@@ -26,7 +25,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> CreateUser(UserDTO userDto)
         {
-            ResponseModel responseModel = new ResponseModel();
+            UserResponseModel responseModel = new UserResponseModel();
             if(userDto == null) 
             {
                 responseModel.Status = "Failed";
@@ -59,7 +58,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUsers()
         {
-            ResponseModel responseModel = new ResponseModel();  
+            UserResponseModel responseModel = new UserResponseModel();  
            
             try
             {
@@ -84,7 +83,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login(LoginRequest loginRequest)
         {
-            ResponseModel responseModel = new ResponseModel();
+            UserResponseModel responseModel = new UserResponseModel();
             if (loginRequest == null || string.IsNullOrEmpty(loginRequest.Email) || string.IsNullOrEmpty(loginRequest.Password))
             {
                 responseModel.Status = "Failed";
@@ -131,7 +130,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> GetUser(string email)
         {
-            ResponseModel responseModel = new ResponseModel();
+            UserResponseModel responseModel = new UserResponseModel();
             
             try
             {
@@ -155,7 +154,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserProfile(int id, UserDTO userDto)
         {
-            ResponseModel responseModel = new ResponseModel();
+            UserResponseModel responseModel = new UserResponseModel();
             try
             {
                 var update = _usersService.UpdateUserProfile(id, userDto);
@@ -179,7 +178,7 @@ namespace collab_api2.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            ResponseModel responseModel = new ResponseModel();
+            UserResponseModel responseModel = new UserResponseModel();
             try
             {
                 var deleted = await _usersService.DeleteUser(id);
@@ -191,7 +190,7 @@ namespace collab_api2.Controllers
 
                 } else 
                 {
-                    responseModel = new ResponseModel();
+                    responseModel = new UserResponseModel();
                     responseModel.Status = "Failed";
                     responseModel.Message = "An error occurred";
                     return BadRequest(responseModel);
@@ -202,7 +201,7 @@ namespace collab_api2.Controllers
             }
             catch (Exception ex)
             {
-                responseModel = new ResponseModel();
+                responseModel = new UserResponseModel();
                 responseModel.Status = "Failed";
                 responseModel.Message = ex.Message;
                 return BadRequest(responseModel);
