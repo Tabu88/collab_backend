@@ -16,6 +16,8 @@ namespace collab_api2.Models
         public string UserId { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        public List<Subtask> Subtasks { get; set; }
+
     }
 
     public class Subtask
@@ -24,7 +26,7 @@ namespace collab_api2.Models
         public int Id { get; set; }
         public string Subtitle { get; set; }
         public string Checked { get; set; }
-        public int UserId { get; set; }
+        public string UserId { get; set; }
 
         [ForeignKey("TaskId")]
         public int TaskId { get; set; }

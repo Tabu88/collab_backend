@@ -10,11 +10,13 @@ namespace collab_api2.Services
     {
         private readonly IConfiguration _config;
         private readonly ILogger<TasksService> _logger;
+        private readonly SubtasksService _subService;
 
-        public TasksService(IConfiguration config, ILogger<TasksService> logger)
+        public TasksService(IConfiguration config, ILogger<TasksService> logger, SubtasksService subService)
         {
             _config = config;
             _logger = logger;
+            _subService = subService;
         }
 
         public async System.Threading.Tasks.Task<bool> CreateTask(TaskDTO taskDto) 
@@ -44,7 +46,29 @@ namespace collab_api2.Services
 
                         command.ExecuteNonQuery();
                     }
-                    _logger.LogInformation("User created");
+                    _logger.LogInformation("Task created");
+                    // get task id
+                    (bool success, int id) result = await GetTaskId(taskDto.Title);
+                    if(result.success) 
+                    {
+                        foreach (var subtask in taskDto.Subtasks)
+                        {
+                            var created = await _subService.CreateSubtask(subtask, result.id);
+                            if (!created)
+                            {
+                                _logger.LogError($"Error creating subtask {subtask.Subtitle}");
+                                return false;
+
+                            }
+
+                        }
+
+                    } else 
+                    {
+                        _logger.LogInformation("Error fetching taskId ");
+                        return false;
+                    
+                    }
 
                 }
 
@@ -57,6 +81,52 @@ namespace collab_api2.Services
             }
             return true;
 
+        }
+
+        private async Task<(bool, int)> GetTaskId(string title) 
+        {
+            string connectionString = _config.GetConnectionString("HostedConnection");
+            Models.Task task = new Models.Task();
+
+            try 
+            {
+                using (var connection = new SqlConnection(connectionString)) 
+                {
+                    connection.Open();
+
+                    string sql = "SELECT * FROM tasks WHERE title=@title";
+                    using( var command = new SqlCommand(sql, connection)) 
+                    {
+                        command.Parameters.AddWithValue("@title", title);
+                        using (var reader = command.ExecuteReader()) 
+                        {
+                            if(reader.Read()) 
+                            {
+                                task.Id = reader.GetInt32(0);
+                                task.Title = reader.GetString(1);
+                                task.Description = reader.GetString(2);
+                                task.Alert = reader.GetString(3);
+                                task.Status = reader.GetString(4);
+                                task.Category = reader.GetString(5);
+                                task.Deadline = reader.GetDateTime(6);
+                                task.UserId = reader.GetString(7);
+                                task.CreatedAt = reader.GetDateTime(8);
+                            
+                            }
+                        }
+                    }                
+                }           
+            
+            } catch (Exception ex) 
+            {
+                _logger.LogError($"An exception occurred: {ex}");
+                return (false, 0);           
+            }
+            return (true, task.Id);
+
+
+        
+        
         }
 
         public async Task<(bool, List<Models.Task>)> GetUserTasks(string userId) 
@@ -93,12 +163,24 @@ namespace collab_api2.Services
                                 task.UserId = reader.GetString(7);
                                 task.CreatedAt = reader.GetDateTime(8);
 
+                                (bool success, List<Subtask> subtasks) result = await _subService.GetSubtasks(task.Id);
+                                if(!result.success) 
+                                {
+                                    _logger.LogInformation("Failed fetching subtasks");
+                                    return (false, null);
+                                   
+                                
+                                }
+                                task.Subtasks = result.subtasks;
+
                                 tasks.Add(task);
+
 
 
                             }
                            
                         }
+                        
 
 
                     }
@@ -192,6 +274,14 @@ namespace collab_api2.Services
                         command.Parameters.AddWithValue("@id", id);
                         command.ExecuteNonQuery();
 
+                        var deleted = await _subService.RemoveSubtask(id);
+                        if(!deleted) 
+                        {
+                            _logger.LogInformation("Failed to remove subtasks");
+                            return false;
+                        
+                        }
+
                     }
 
                 }
@@ -219,6 +309,7 @@ namespace collab_api2.Services
                     string sql = "UPDATE tasks SET title=@title, description=@description, alert=@alert, status=@status, category=@category, deadline=@deadline, userId=@userId WHERE id=@id";
                     using (var command = new SqlCommand(sql, connection))
                     {
+                        command.Parameters.AddWithValue("@id", id);
                         command.Parameters.AddWithValue("@title", taskDto.Title);
                         command.Parameters.AddWithValue("@description", taskDto.Description);
                         command.Parameters.AddWithValue("@alert", taskDto.Alert);
@@ -227,6 +318,18 @@ namespace collab_api2.Services
                         command.Parameters.AddWithValue("@deadline", taskDto.Deadline);
                         command.Parameters.AddWithValue("@userId", taskDto.UsersId);
 
+                        foreach(var subtask in taskDto.Subtasks) 
+                        {
+                            var updated = await _subService.UpdateSubtask(id, subtask);
+                            if (!updated) 
+                            {
+                                _logger.LogError("Failed to update subtasks");
+                                return false;
+                            
+                            }
+                        
+                        
+                        }
                         command.ExecuteNonQuery();
                     }
                 }

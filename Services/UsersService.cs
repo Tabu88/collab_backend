@@ -206,16 +206,11 @@ namespace collab_api2.Services
                                
 
                             }
-                     
-
-
-
                         }
 
                     }
 
                 }
-
 
             } catch (Exception ex) 
             {

@@ -27,6 +27,8 @@ namespace collab_api2.Models
         [Required]
         public DateTime Deadline { get; set; }
 
+        public List<SubtaskDTO> Subtasks { get; set; }
+
 
     }
 

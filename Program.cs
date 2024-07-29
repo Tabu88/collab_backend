@@ -26,7 +26,7 @@ namespace collab_api2
             builder.Services.AddTransient<UsersService>();
             builder.Services.AddTransient<TasksService>();
             builder.Services.AddTransient<MessagesService>();
-            //builder.Services.AddTransient<SubtServices>();`
+            builder.Services.AddTransient<SubtasksService>();
 
             var app = builder.Build();
 
