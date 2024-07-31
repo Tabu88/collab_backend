@@ -11,10 +11,10 @@ pool:
 
 variables:
   containerRegistryServiceConnection: 'ncbadevtestacrcon'
-  imageRepository: 'AkiMotorsGateway'
-  dockerFilePath: '$(Build.SourcesDirectory)/AKIMotorsGateway/Dockerfile'
+  imageRepository: 'collabAPIs'
+  dockerFilePath: '$(Build.SourcesDirectory)/Dockerfile'
   workingDirectory: '$(Build.SourcesDirectory)'
-  applicationName: 'AKIMotorsGateway'
+  applicationName: 'collabAPIs'
 
 parameters:
   - name: tagFormat
