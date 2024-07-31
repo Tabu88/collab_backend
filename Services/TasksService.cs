@@ -85,7 +85,7 @@ namespace collab_api2.Services
 
         private async Task<(bool, int)> GetTaskId(string title) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             Models.Task task = new Models.Task();
 
             try 
@@ -131,61 +131,77 @@ namespace collab_api2.Services
 
         public async Task<(bool, List<Models.Task>)> GetUserTasks(string userId) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             List<Models.Task> tasks = new List<Models.Task>();
+            List<String> users = new List<String>(userId.Split('|'));
+            Models.Task task = new Models.Task();
 
             try
             {
                 using (var connection = new SqlConnection(connectionString))
                 {
+                   
+
                     connection.Open();
-                    _logger.LogInformation("Connection opened");
+                    //_logger.LogInformation("Connection opened");
 
 
                     string sql = "SELECT * FROM tasks WHERE userId=@userId";
-                    using (var command = new SqlCommand(sql, connection))
+                    foreach (var user in users)
                     {
-                        command.Parameters.AddWithValue("@userId", userId);
-
-                        using (var reader = command.ExecuteReader())
+                        using (var command = new SqlCommand(sql, connection))
                         {
-                            while (reader.Read())
+                       
+                            command.Parameters.AddWithValue("@userId", userId);
+
+                            using (var reader = command.ExecuteReader())
                             {
-                                Models.Task task = new Models.Task();
-
-                                task.Id = reader.GetInt32(0);
-                                task.Title = reader.GetString(1);
-                                task.Description = reader.GetString(2);
-                                task.Alert = reader.GetString(3);
-                                task.Status = reader.GetString(4);
-                                task.Category = reader.GetString(5);
-                                task.Deadline = reader.GetDateTime(6);
-                                task.UserId = reader.GetString(7);
-                                task.CreatedAt = reader.GetDateTime(8);
-
-                                (bool success, List<Subtask> subtasks) result = await _subService.GetSubtasks(task.Id);
-                                if(!result.success) 
+                                while (reader.Read())
                                 {
-                                    _logger.LogInformation("Failed fetching subtasks");
-                                    return (false, null);
-                                   
-                                
+                                    
+
+                                    task.Id = reader.GetInt32(0);
+                                    task.Title = reader.GetString(1);
+                                    task.Description = reader.GetString(2);
+                                    task.Alert = reader.GetString(3);
+                                    task.Status = reader.GetString(4);
+                                    task.Category = reader.GetString(5);
+                                    task.Deadline = reader.GetDateTime(6);
+                                    task.UserId = reader.GetString(7);
+                                    task.CreatedAt = reader.GetDateTime(8);
+
+                                    _logger.LogInformation("Reading values");
+
+                                    (bool success, List<Subtask> subtasks) result = await _subService.GetSubtasks(task.Id);
+
+                                    if (!result.success)
+                                    {
+                                        _logger.LogInformation("Failed fetching subtasks");
+                                        return (false, null);
+
+
+                                    }
+                                    task.Subtasks = result.subtasks;
+                                    tasks.Add(task);
+
+
+
+
+
                                 }
-                                task.Subtasks = result.subtasks;
-
-                                tasks.Add(task);
-
-
 
                             }
-                           
+                            
+
+
+
                         }
                         
-
-
                     }
+                    
 
                 }
+                
 
             }
             catch (Exception ex)

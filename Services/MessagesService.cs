@@ -17,7 +17,7 @@ namespace collab_api2.Services
         }
         public async Task<bool> CreateMessage(MessagesDTO messagesDto) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try
             {
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -51,7 +51,7 @@ namespace collab_api2.Services
 
         public async Task<bool> DeletedMessage(int id) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -82,7 +82,7 @@ namespace collab_api2.Services
         public async Task<(bool, List<Messages>)> GetReceivedMessages(string to) 
         {
 
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             List<Messages> messages = new List<Models.Messages>();
             try
             {
@@ -127,7 +127,7 @@ namespace collab_api2.Services
 
         public async Task<(bool, List<Messages>)> GetSentMessages(string from) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             List<Messages> messages = new List<Messages>();
             try
             {

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace collab_api2.Models
 {
@@ -29,7 +30,7 @@ namespace collab_api2.Models
         public string UserId { get; set; }
 
         [ForeignKey("TaskId")]
-        public int TaskId { get; set; }
+        public string TaskId { get; set; }
         public DateTime CreatedAt { get; set; }
 
 

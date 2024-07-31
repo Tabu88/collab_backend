@@ -18,7 +18,7 @@ namespace collab_api2.Services
 
         public async Task<bool> CreateSubtask(SubtaskDTO subtaskDTO, int taskId) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try
             {
                 using (SqlConnection connection = new SqlConnection(connectionString))
@@ -60,7 +60,7 @@ namespace collab_api2.Services
 
         public async Task<(bool,List<Subtask>)> GetSubtasks(int taskId) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             List<Subtask> subtasks = new List<Subtask>();
             try 
             {
@@ -83,10 +83,14 @@ namespace collab_api2.Services
                                 subtask.Subtitle = reader.GetString(1);
                                 subtask.Checked = reader.GetString(2);
                                 subtask.UserId = reader.GetString(3);
-                                subtask.TaskId = reader.GetInt32(4);
+                                subtask.TaskId = reader.GetString(4);
                                 subtask.CreatedAt = reader.GetDateTime(5);
 
-                                subtasks.Add(subtask);                            
+                                _logger.LogInformation("Reading values");
+
+                                subtasks.Add(subtask);
+
+                                _logger.LogInformation("Adding values");
                             }                       
                         }                    
                     }
@@ -106,7 +110,7 @@ namespace collab_api2.Services
 
         public async Task<bool> RemoveSubtask(int taskId) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try 
             {
                 using( var connection = new SqlConnection(connectionString)) 
@@ -140,7 +144,7 @@ namespace collab_api2.Services
 
         public async Task<bool> UpdateSubtask(int taskId,SubtaskDTO subtaskDTO) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try 
             {
                 using( var connection = new SqlConnection(connectionString)) 
@@ -173,8 +177,5 @@ namespace collab_api2.Services
         
         
         }
-
-
-
     }
 }

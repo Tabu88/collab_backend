@@ -69,19 +69,19 @@ namespace collab_api2.Controllers
             try 
             {
                 (bool success,List<Models.Task> tasks) result = await _tasksService.GetUserTasks(userId);
-                if (result.success) 
+                if (result.success == true) 
                 {
                     responseModel.Status = "Success";
                     responseModel.Message = "Task retrieved successfully";
                     responseModel.Tasks = result.tasks;
-                    return Ok(responseModel);
+                   
 
                 }
                 else 
                 {
                     responseModel.Status = "Failed";
                     responseModel.Message = "Failed service";
-                    return BadRequest(responseModel);
+                    
                 
                 
                 }
@@ -95,7 +95,8 @@ namespace collab_api2.Controllers
             
             
             }
-         
+            return Ok(responseModel);
+
 
         }
 

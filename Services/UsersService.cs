@@ -21,7 +21,7 @@ namespace collab_api2.Services
         }
         public async System.Threading.Tasks.Task CreateUser(UserDTO userDto) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try
             {
                 string passwordHash = BCrypt.Net.BCrypt.HashPassword(userDto.Password);
@@ -31,8 +31,8 @@ namespace collab_api2.Services
                     _logger.LogInformation("Connection opened");
 
                     string sql = "INSERT INTO users " +
-                        "(name, email ,password ,profile_image, location) VALUES " +
-                        "(@name, @email, @password, @profile_image, @location)";
+                        "(name, email ,password , gender, profileImage, location) VALUES " +
+                        "(@name, @email, @password, @gender, @profileImage, @location)";
 
                     using (var command = new SqlCommand(sql, connection))
                     {
@@ -40,7 +40,8 @@ namespace collab_api2.Services
                         command.Parameters.AddWithValue("@name", userDto.Name);
                         command.Parameters.AddWithValue("@email", userDto.Email);
                         command.Parameters.AddWithValue("@password", passwordHash);
-                        command.Parameters.AddWithValue("@profile_image", userDto.ProfileImage);
+                        command.Parameters.AddWithValue("@gender", userDto.Gender);
+                        command.Parameters.AddWithValue("@profileImage", userDto.ProfileImage);
                         command.Parameters.AddWithValue("@location", userDto.Location);
                         _logger.LogInformation("Added values");
 
@@ -65,7 +66,7 @@ namespace collab_api2.Services
 
         public  List<User> GetUsers() 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             List<User> users = new List<User>();
             try 
             {
@@ -88,10 +89,10 @@ namespace collab_api2.Services
                                 user.Name = reader.GetString(1);
                                 user.Email = reader.GetString(2);
                                 user.PasswordHash = reader.GetString(3);
-                                user.CreatedAt = reader.GetDateTime(4);
-                                user.ProfileImage = reader.IsDBNull(reader.GetOrdinal("profile_image")) ? null : (byte[])reader["profile_image"];
-
-                                user.Location = reader.IsDBNull(reader.GetOrdinal("location")) ? null : reader.GetString(6);
+                                user.Gender = reader.GetString(4);
+                                user.CreatedAt = reader.GetDateTime(5);
+                                user.ProfileImage = reader.GetString(6);
+                                user.Location = reader.GetString(7);
 
 
                                 users.Add(user);
@@ -119,31 +120,38 @@ namespace collab_api2.Services
 
         public async Task<(int, string)> AuthenticateUser(LoginRequest loginReq) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
            
             int result;
             User user = new User();
+            _logger.LogInformation("initialized variables");
             using (SqlConnection connection = new SqlConnection(connectionString))
             {
-                string query = "SELECT COUNT(*) FROM Users WHERE Email = @Email AND Password = @Password";
+                string query = "SELECT COUNT(*) FROM Users WHERE email = @Email ";
                 SqlCommand command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Email", loginReq.Email);
-                command.Parameters.AddWithValue("@Password", loginReq.Password); // Note: Ensure password hashing and secure comparison in production
+                //command.Parameters.AddWithValue("@Password", loginReq.Password); // Note: Ensure password hashing and secure comparison in production
 
                 await connection.OpenAsync();
                  result = (int)await command.ExecuteScalarAsync();
 
             }
-             user = await GetUser(loginReq.Email);
+            if(result == 1)
+            {
+                _logger.LogInformation("getting user");
+                user = await GetUser(loginReq.Email);
 
-            if(!BCrypt.Net.BCrypt.Verify(loginReq.Password, user.PasswordHash))
-            { 
-                result = 2;
-                
+                if (!BCrypt.Net.BCrypt.Verify(loginReq.Password, user.PasswordHash))
+                {
+                    result = 2;
+
+                }
+               
             }
+            _logger.LogInformation("creating token");
             string token = CreateToken(user);
 
-            
+
             return (result, token);
 
 
@@ -155,19 +163,20 @@ namespace collab_api2.Services
             {
                 new Claim(ClaimTypes.Name, user.Name),
             };
-
+            _logger.LogInformation("claiming");
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes
                 (_config.GetSection("AppSettings:Token").Value!));
 
             var cred = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature );
-
+            _logger.LogInformation("signing credentials");
             var token = new JwtSecurityToken(
                 claims: claims,
                 expires: DateTime.Now.AddDays(1),
                 signingCredentials: cred
                 );
+            _logger.LogInformation("writing token");
             var jwt = new JwtSecurityTokenHandler().WriteToken(token);
-
+            _logger.LogInformation("returning token");
             return jwt;
         
 
@@ -175,7 +184,7 @@ namespace collab_api2.Services
 
         public async Task<User> GetUser(string email) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             User user = new User();
 
             try 
@@ -199,9 +208,10 @@ namespace collab_api2.Services
                                 user.Name = reader.GetString(1);
                                 user.Email = reader.GetString(2);
                                 user.PasswordHash = reader.GetString(3);
-                                user.CreatedAt = reader.GetDateTime(4);
-                                user.ProfileImage = reader.IsDBNull(reader.GetOrdinal("profile_image")) ? null : (byte[])reader["profile_image"];
-                                user.Location = reader.IsDBNull(reader.GetOrdinal("location")) ? null : reader.GetString(reader.GetOrdinal("location"));
+                                user.Gender = reader.GetString(4);
+                                user.CreatedAt = reader.GetDateTime(5);
+                                user.ProfileImage = reader.GetString(6);
+                                user.Location = reader.GetString(7);
 
                                
 
@@ -226,7 +236,7 @@ namespace collab_api2.Services
 
         public async Task<bool> UpdateUserProfile(int id, UserDTO userDto) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try
             {
                 using (var connection = new SqlConnection(connectionString))
@@ -264,7 +274,7 @@ namespace collab_api2.Services
 
         public async Task<bool> DeleteUser(int id) 
         {
-            string connectionString = _config.GetConnectionString("HostedConnection");
+            string connectionString = _config.GetConnectionString("DefaultConnection");
             try 
             {
                 using (var connection = new SqlConnection(connectionString))
