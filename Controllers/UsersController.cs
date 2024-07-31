@@ -94,7 +94,7 @@ namespace collab_api2.Controllers
 
             try
             {
-                (int result, string token) auth = await _usersService.AuthenticateUser(loginRequest.Email, loginRequest.Password);
+                (int result, string token) auth = await _usersService.AuthenticateUser(loginRequest);
                 if (auth.result == 1)
                 {
                     responseModel.Status = "Success";

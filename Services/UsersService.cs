@@ -117,7 +117,7 @@ namespace collab_api2.Services
         
         }
 
-        public async Task<(int, string)> AuthenticateUser(string email, string password) 
+        public async Task<(int, string)> AuthenticateUser(LoginRequest loginReq) 
         {
             string connectionString = _config.GetConnectionString("HostedConnection");
            
@@ -127,16 +127,16 @@ namespace collab_api2.Services
             {
                 string query = "SELECT COUNT(*) FROM Users WHERE Email = @Email AND Password = @Password";
                 SqlCommand command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@Email", email);
-                command.Parameters.AddWithValue("@Password", password); // Note: Ensure password hashing and secure comparison in production
+                command.Parameters.AddWithValue("@Email", loginReq.Email);
+                command.Parameters.AddWithValue("@Password", loginReq.Password); // Note: Ensure password hashing and secure comparison in production
 
                 await connection.OpenAsync();
                  result = (int)await command.ExecuteScalarAsync();
 
             }
-             user = await GetUser(email);
+             user = await GetUser(loginReq.Email);
 
-            if(!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
+            if(!BCrypt.Net.BCrypt.Verify(loginReq.Password, user.PasswordHash))
             { 
                 result = 2;
                 

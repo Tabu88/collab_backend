@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("collab_api2")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f83a59dbac80930ca8ab2c3fc4ff8e73afd4bcf4")]
 [assembly: System.Reflection.AssemblyProductAttribute("collab_api2")]
 [assembly: System.Reflection.AssemblyTitleAttribute("collab_api2")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

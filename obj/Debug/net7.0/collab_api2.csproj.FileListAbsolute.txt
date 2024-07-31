@@ -68,10 +68,11 @@ C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\st
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\staticwebassets.build.json
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\staticwebassets.development.json
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\scopedcss\bundle\collab_api2.styles.css
-C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.csproj.CopyComplete
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.dll
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\refint\collab_api2.dll
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.pdb
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.genruntimeconfig.cache
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\ref\collab_api2.dll
 C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\bin\Debug\net7.0\BCrypt.Net-Next.dll
+C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_api2.sourcelink.json
+C:\Users\Dennis.Wabomba\source\repos\collab_api2\collab_api2\obj\Debug\net7.0\collab_a.F7F32FAB.Up2Date
